@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.*
+*.log
+.DS_Store
+coverage/
+.google-ads-mcp/
+
+# MCP Registry local auth tokens
+.mcpregistry_*_token

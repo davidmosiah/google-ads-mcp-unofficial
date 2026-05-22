@@ -1,0 +1,17 @@
+# Google Ads MCP (unofficial)
+Unofficial Model Context Protocol server for the Google Ads REST API.
+Repository: https://github.com/davidmosiah/google-ads-mcp-unofficial
+NPM: https://www.npmjs.com/package/google-ads-mcp-unofficial
+Primary command: npm exec --yes --package=google-ads-mcp-unofficial -- google-ads-mcp-server doctor
+MCP command: google-ads-mcp-server
+
+- MCP registry name: io.github.davidmosiah/google-ads-mcp
+- Start agents with google_ads_connection_status and google_ads_data_inventory before any data tool.
+- Default tools are READ-ONLY: discovery, list, performance, daily report, find waste.
+- WRITE tools (pause/resume/bid/budget) are DISABLED by default and gated behind GOOGLE_ADS_ALLOW_MUTATIONS=true.
+- Required env: GOOGLE_ADS_DEVELOPER_TOKEN, GOOGLE_ADS_CLIENT_ID, GOOGLE_ADS_CLIENT_SECRET.
+- Optional env: GOOGLE_ADS_LOGIN_CUSTOMER_ID (MCC), GOOGLE_ADS_REDIRECT_URI, GOOGLE_ADS_PRIVACY_MODE (summary|structured|raw), GOOGLE_ADS_NO_RETRY, GOOGLE_ADS_CACHE.
+- Customer ids are partial-redacted (123-***-7890) by default. Set privacy_mode=raw to see full ids.
+- Tokens stay local under ~/.google-ads-mcp/tokens.json (0600 perms) and are never returned by tools.
+- Mutations are logged to stderr for audit. Always review proposed changes before enabling write tools.
+- Not affiliated with Google. Use at your own risk — agents changing real ad spend is high-stakes.

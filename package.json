@@ -1,0 +1,73 @@
+{
+  "name": "google-ads-mcp-unofficial",
+  "version": "0.1.0",
+  "description": "Unofficial MCP server for connecting AI agents to the Google Ads API. Read campaigns, keywords, performance. Optional gated mutations for bids, budgets, and pause/resume.",
+  "type": "module",
+  "bin": {
+    "google-ads-mcp-unofficial": "dist/index.js",
+    "google-ads-mcp-server": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "AGENTS.md",
+    "CONTRIBUTING.md",
+    "server.json",
+    "examples",
+    "llms.txt"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "smoke": "node scripts/smoke-tools.mjs",
+    "test:metadata": "node scripts/metadata-check.mjs",
+    "test:http-retry": "node scripts/http-retry-test.mjs",
+    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run smoke && npm run test:http-retry",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "google-ads",
+    "advertising",
+    "marketing",
+    "ai-agents",
+    "ads-automation",
+    "campaign-management"
+  ],
+  "author": "David Mosiah",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.21.0",
+    "better-sqlite3": "^12.9.0",
+    "zod": "^4.4.1"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.20.6",
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davidmosiah/google-ads-mcp-unofficial.git"
+  },
+  "bugs": {
+    "url": "https://github.com/davidmosiah/google-ads-mcp-unofficial/issues",
+    "email": "support@delx.ai"
+  },
+  "homepage": "https://github.com/davidmosiah/google-ads-mcp-unofficial",
+  "mcpName": "io.github.davidmosiah/google-ads-mcp",
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "dist/index.js"
+}
