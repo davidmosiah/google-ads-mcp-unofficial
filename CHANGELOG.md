@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.1 - 2026-05-22
+
+### Documentation
+
+- **`docs/auth.md` — added "Before you start" section** that explains the Google Ads API access tiers (Test → Basic → Standard) and walks through how to apply for Basic access. Previously users could install the MCP, run setup, and then hit `USER_PERMISSION_DENIED` on every real customer query because their developer token was on Test-access default — with no in-repo hint of the cause. Now the gap is explicit: prerequisites checklist (MCC + linked advertiser + Cloud project + use-case description), step-by-step Basic-access application instructions, and a "Testing without Basic access" path using Google Ads test accounts.
+- **`docs/auth.md` — added "Common first-call errors"** table mapping the 7 most common Google Ads first-call failures to actionable fixes (USER_PERMISSION_DENIED, Access blocked, invalid_grant, developer-token: not authorized, QUOTA_EXCEEDED, etc.).
+- **`docs/auth.md` — added OAuth consent screen warning** about Testing-mode requiring your Gmail in Test users to avoid "Access blocked: project has not been verified".
+- **`README.md` — Quick Start now opens with a Basic-access prerequisite callout** linking to `docs/auth.md` so first-time users see the gotcha before running setup.
+- **`README.md` — Troubleshooting table expanded** from 6 to 9 rows. New entries: `USER_PERMISSION_DENIED` (Test vs Basic access), `Access blocked: project has not been verified`, `developer-token: not authorized`, `QUOTA_EXCEEDED`.
+
+No code changes. All tools, schemas, and behaviors identical to 0.1.0.
+
 ## 0.1.0 - 2026-05-22
 
 Initial release.

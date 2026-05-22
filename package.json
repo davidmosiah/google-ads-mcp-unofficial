@@ -1,6 +1,6 @@
 {
   "name": "google-ads-mcp-unofficial",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Unofficial MCP server for connecting AI agents to the Google Ads API. Read campaigns, keywords, performance. Optional gated mutations for bids, budgets, and pause/resume.",
   "type": "module",
   "bin": {
