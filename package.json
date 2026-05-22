@@ -1,6 +1,6 @@
 {
   "name": "google-ads-mcp-unofficial",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Unofficial MCP server for connecting AI agents to the Google Ads API. Read campaigns, keywords, performance. Optional gated mutations for bids, budgets, and pause/resume.",
   "type": "module",
   "bin": {
@@ -25,9 +25,10 @@
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "smoke": "node scripts/smoke-tools.mjs",
+    "smoke:http": "node scripts/smoke-http.mjs",
     "test:metadata": "node scripts/metadata-check.mjs",
     "test:http-retry": "node scripts/http-retry-test.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run smoke && npm run test:http-retry",
+    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run smoke && npm run smoke:http && npm run test:http-retry",
     "prepublishOnly": "npm test"
   },
   "keywords": [
@@ -45,10 +46,14 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.21.0",
     "better-sqlite3": "^12.9.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "zod": "^4.4.1"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^25.6.0",
     "tsx": "^4.20.6",
     "typescript": "^6.0.3"

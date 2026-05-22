@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.2 - 2026-05-22
+
+### Added
+
+- **HTTP transport** (`--http` flag). The CLI now boots Streamable HTTP MCP via `dist/index.js --http`. Listens on `127.0.0.1:3000/mcp` by default; `/health` returns `{ok, name, version}`. Env: `GOOGLE_ADS_MCP_HOST`, `GOOGLE_ADS_MCP_PORT`, `GOOGLE_ADS_MCP_ALLOWED_ORIGIN`, `GOOGLE_ADS_MCP_TRANSPORT=http`. Previously the README mentioned `--http` but the transport wasn't actually wired up — only stdio worked. Now both transports are real.
+- **`scripts/smoke-http.mjs`** — boots `dist/index.js --http` on a random port, polls `/health` until 200, asserts the response shape (`ok`, `name`, `version`). Wired into `npm test` so HTTP regressions get caught at CI time.
+- **`.github/workflows/ci.yml`** — runs `npm ci && npm test` on push + PR to main, Node 22. Same pattern as the rest of the davidmosiah MCP ecosystem.
+- **`glama.json`** — Glama MCP registry metadata for passive discovery.
+
+### Changed
+
+- New dependencies: `express ^5.2.1`, `cors ^2.8.6` (and dev `@types/express`, `@types/cors`) — required for HTTP transport. Same deps used by every other HTTP-capable MCP in the davidmosiah ecosystem; no new attack surface.
+- `package.json` test script chain now: `typecheck → build → test:metadata → smoke → smoke:http → test:http-retry`.
+
 ## 0.1.1 - 2026-05-22
 
 ### Documentation
