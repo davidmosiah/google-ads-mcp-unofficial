@@ -1,6 +1,7 @@
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { DEFAULT_SCOPES } from "../constants.js";
+import { DEFAULT_CACHE_TTL_SECONDS } from "./cache.js";
 import type { GoogleAdsConfig, PrivacyMode } from "../types.js";
 import { loadConfigSources } from "./local-config.js";
 
@@ -23,6 +24,7 @@ export function getConfig(): GoogleAdsConfig {
   const privacyMode = parsePrivacyMode(value("GOOGLE_ADS_PRIVACY_MODE"));
   const allowMutations = parseBool(value("GOOGLE_ADS_ALLOW_MUTATIONS"), false);
   const cacheEnabled = parseBool(value("GOOGLE_ADS_CACHE"), false);
+  const cacheTtlSeconds = parseTtlSeconds(value("GOOGLE_ADS_CACHE_TTL_SECONDS"));
 
   const missing = [
     ["GOOGLE_ADS_DEVELOPER_TOKEN", developerToken],
@@ -48,8 +50,16 @@ export function getConfig(): GoogleAdsConfig {
     privacyMode,
     allowMutations,
     cacheEnabled,
-    cachePath
+    cachePath,
+    cacheTtlSeconds
   };
+}
+
+function parseTtlSeconds(value: string | undefined): number {
+  if (!value) return DEFAULT_CACHE_TTL_SECONDS;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return DEFAULT_CACHE_TTL_SECONDS;
+  return Math.floor(n);
 }
 
 function parsePrivacyMode(value: string | undefined): PrivacyMode {

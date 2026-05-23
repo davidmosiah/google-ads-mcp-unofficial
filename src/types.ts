@@ -21,6 +21,7 @@ export interface GoogleAdsConfig {
   allowMutations: boolean;
   cacheEnabled: boolean;
   cachePath: string;
+  cacheTtlSeconds: number;
 }
 
 export interface ToolResponse<T> extends Record<string, unknown> {

@@ -6,9 +6,11 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const expectedTools = [
-  // meta + diagnostic (5)
+  // meta + diagnostic (7) — +cache_status, +clear_cache
   'google_ads_agent_manifest',
+  'google_ads_cache_status',
   'google_ads_capabilities',
+  'google_ads_clear_cache',
   'google_ads_connection_status',
   'google_ads_data_inventory',
   'google_ads_privacy_audit',
@@ -29,9 +31,10 @@ const expectedTools = [
   'google_ads_list_ad_groups',
   'google_ads_list_campaigns',
   'google_ads_list_keywords',
-  // workflow (2)
+  // workflow (3) — +quick_wins
   'google_ads_daily_report',
   'google_ads_find_waste',
+  'google_ads_quick_wins',
   // mutations (6)
   'google_ads_pause_campaign',
   'google_ads_pause_keyword',
@@ -105,6 +108,31 @@ try {
   assert.equal(statusResult.structuredContent?.client, 'hermes');
   assert.equal(statusResult.structuredContent?.mutations_allowed, false);
   assert.ok(statusResult.structuredContent?.client_checks?.hermes?.recommendations?.some((step) => step.includes('/reload-mcp')));
+
+  // Cache status returns the schema-conformant shape even when cache disabled.
+  const cacheStatusResult = await client.callTool({
+    name: 'google_ads_cache_status',
+    arguments: { response_format: 'json' }
+  });
+  assert.equal(cacheStatusResult.structuredContent?.cache_enabled, false, 'cache disabled by default');
+  assert.equal(cacheStatusResult.structuredContent?.entries_count, 0);
+  assert.ok(cacheStatusResult.structuredContent?.cache_path, 'cache_path exposed');
+  assert.equal(typeof cacheStatusResult.structuredContent?.default_ttl_seconds, 'number');
+
+  // Clear cache no-ops when disabled (cleared_entries=0) without erroring.
+  const clearResult = await client.callTool({
+    name: 'google_ads_clear_cache',
+    arguments: { response_format: 'json' }
+  });
+  assert.equal(clearResult.structuredContent?.cache_enabled, false);
+  assert.equal(clearResult.structuredContent?.cleared_entries, 0);
+
+  // Quick-wins schema: missing customer_id should error from MCP validation.
+  const qwBadResult = await client.callTool({
+    name: 'google_ads_quick_wins',
+    arguments: { response_format: 'json' }
+  });
+  assert.equal(qwBadResult.isError, true, 'quick_wins must reject missing customer_id');
 
   // Mutation tool with mutations disabled should fail with an actionable error.
   const muteResult = await client.callTool({

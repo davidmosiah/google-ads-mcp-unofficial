@@ -7,7 +7,7 @@ import {
   SERVER_VERSION
 } from "../constants.js";
 import type { GaqlSearchResponse, GoogleAdsConfig, GoogleAdsTokenSet } from "../types.js";
-import { disabledCacheStatus, GoogleAdsCache, type CacheStatus } from "./cache.js";
+import { disabledCacheStatus, GoogleAdsCache, type CacheClearResult, type CacheLookupInput, type CacheStatus } from "./cache.js";
 import { fetchWithRetry as fetchWithRetryMiddleware } from "./http-retry.js";
 import { redactErrorMessage } from "./redaction.js";
 import { TokenStore } from "./token-store.js";
@@ -95,14 +95,22 @@ export class GoogleAdsClient {
   /**
    * Execute a GAQL query against `customers/{customerId}/googleAds:search`.
    * Auto-pages when callers iterate `nextPageToken`.
+   *
+   * `privacyMode` is recorded in the cache key (not sent to Google). Callers that
+   * apply privacy AFTER the response don't need to pass it — only pass it if the
+   * agent layer wants to keep responses for different privacy modes cached
+   * separately.
    */
-  async search(options: GaqlSearchOptions): Promise<GaqlSearchResponse> {
+  async search(options: GaqlSearchOptions, privacyMode?: string): Promise<GaqlSearchResponse> {
     const cid = sanitize(options.customerId);
     const url = `${GOOGLE_ADS_API_BASE_URL}/customers/${cid}/googleAds:search`;
     const body: Record<string, unknown> = { query: options.query };
     if (options.pageSize) body.pageSize = options.pageSize;
     if (options.pageToken) body.pageToken = options.pageToken;
-    return this.postJson(url, body) as Promise<GaqlSearchResponse>;
+    const cacheInput: CacheLookupInput | undefined = options.pageToken
+      ? undefined // never cache paginated continuations — the page token already implies state
+      : { customerId: cid, query: options.query, privacyMode };
+    return this.postJson(url, body, cacheInput) as Promise<GaqlSearchResponse>;
   }
 
   /**
@@ -135,8 +143,16 @@ export class GoogleAdsClient {
   }
 
   cacheStatus(): CacheStatus {
-    if (!this.config.cacheEnabled) return disabledCacheStatus(this.config.cachePath);
+    if (!this.config.cacheEnabled) return disabledCacheStatus(this.config.cachePath, this.config.cacheTtlSeconds);
     return this.getCache().status();
+  }
+
+  clearCache(): CacheClearResult & { cache_enabled: boolean; cache_path: string } {
+    if (!this.config.cacheEnabled) {
+      return { cleared_entries: 0, cache_enabled: false, cache_path: this.config.cachePath };
+    }
+    const result = this.getCache().clear();
+    return { ...result, cache_enabled: true, cache_path: this.config.cachePath };
   }
 
   async revokeAccess(): Promise<{ ok: true; token_path: string; local_tokens_cleared: boolean }> {
@@ -154,13 +170,13 @@ export class GoogleAdsClient {
     return { ok: true, token_path: this.config.tokenPath, local_tokens_cleared: true };
   }
 
-  private async postJson(url: string, body: Record<string, unknown>): Promise<unknown> {
+  private async postJson(url: string, body: Record<string, unknown>, cacheInput?: CacheLookupInput): Promise<unknown> {
     const bodyText = JSON.stringify(body);
 
-    // Try the cache first for GET-equivalent reads (search calls are POSTs but
-    // semantically idempotent on the query+body pair).
-    if (this.config.cacheEnabled && url.includes(":search")) {
-      const cached = this.getCache().get("POST", url, bodyText);
+    // Try the cache first for GAQL search reads. Mutations are never cached:
+    // they don't carry a cacheInput, so this short-circuit is skipped for them.
+    if (this.config.cacheEnabled && cacheInput) {
+      const cached = this.getCache().get(cacheInput);
       if (cached !== undefined) return cached;
     }
 
@@ -169,9 +185,9 @@ export class GoogleAdsClient {
     if (response.status === 401) {
       const refreshed = await this.refreshToken(true);
       const retry = await this.fetchWithRetry(url, this.buildInit("POST", refreshed.access_token, bodyText));
-      return this.parseAndCache(url, bodyText, retry);
+      return this.parseAndCache(retry, cacheInput);
     }
-    return this.parseAndCache(url, bodyText, response);
+    return this.parseAndCache(response, cacheInput);
   }
 
   private buildInit(method: string, accessToken: string, bodyText?: string): RequestInit {
@@ -261,16 +277,19 @@ export class GoogleAdsClient {
     return payload ?? {};
   }
 
-  private async parseAndCache(url: string, bodyText: string, response: Response): Promise<unknown> {
+  private async parseAndCache(response: Response, cacheInput?: CacheLookupInput): Promise<unknown> {
     try {
       const payload = await this.parseResponse(response);
-      if (this.config.cacheEnabled && url.includes(":search")) {
-        this.getCache().set("POST", url, payload, bodyText);
+      if (this.config.cacheEnabled && cacheInput) {
+        this.getCache().set(cacheInput, payload);
       }
       return payload;
     } catch (error) {
-      if (this.config.cacheEnabled && url.includes(":search")) {
-        const cached = this.getCache().get("POST", url, bodyText);
+      // On a fresh API failure, fall back to the cache if we have a stale entry.
+      // Pass ttlSeconds=0 so an expired row is still surfaced — better stale data
+      // than no data when the upstream is down.
+      if (this.config.cacheEnabled && cacheInput) {
+        const cached = this.getCache().get(cacheInput, { ttlSeconds: 0 });
         if (cached !== undefined) return cached;
       }
       throw error;
@@ -278,7 +297,7 @@ export class GoogleAdsClient {
   }
 
   private getCache(): GoogleAdsCache {
-    this.cache ??= new GoogleAdsCache(this.config.cachePath);
+    this.cache ??= new GoogleAdsCache(this.config.cachePath, this.config.cacheTtlSeconds);
     return this.cache;
   }
 

@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { PINNED_NPM_PACKAGE } from "../constants.js";
 import type { GoogleAdsTokenSet, PrivacyMode } from "../types.js";
 import { HERMES_DIRECT_TOOLS, type AgentClientName } from "./agent-manifest.js";
+import { DEFAULT_CACHE_TTL_SECONDS, disabledCacheStatus, GoogleAdsCache } from "./cache.js";
 import { loadConfigSources } from "./local-config.js";
 
 type Env = Record<string, string | undefined>;
@@ -45,7 +46,14 @@ export interface ConnectionStatus extends Record<string, unknown> {
     has_refresh_token?: boolean;
     error?: string;
   };
-  cache: { enabled: boolean; path: string };
+  cache: {
+    enabled: boolean;
+    path: string;
+    entries_count: number;
+    oldest_age_ms?: number;
+    newest_age_ms?: number;
+    default_ttl_seconds: number;
+  };
   retry: { enabled: boolean; max_attempts: number; env_disable_flag: string };
   client_checks?: { hermes?: HermesClientCheck };
   next_steps: string[];
@@ -106,7 +114,7 @@ export async function buildConnectionStatus(options: ConnectionStatusOptions = {
       error: sources.local.error
     },
     token,
-    cache: { enabled: parseBool(value("GOOGLE_ADS_CACHE")), path: cachePath },
+    cache: inspectCache(parseBool(value("GOOGLE_ADS_CACHE")), cachePath, parseTtlSeconds(value("GOOGLE_ADS_CACHE_TTL_SECONDS"))),
     retry: {
       enabled: env.GOOGLE_ADS_NO_RETRY !== "true",
       max_attempts: 3,
@@ -124,6 +132,48 @@ function parsePrivacyMode(value: string | undefined): PrivacyMode {
 
 function parseBool(value: string | undefined): boolean {
   return Boolean(value && ["1", "true", "yes", "on", "sqlite"].includes(value.toLowerCase()));
+}
+
+function parseTtlSeconds(value: string | undefined): number {
+  if (!value) return DEFAULT_CACHE_TTL_SECONDS;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) return DEFAULT_CACHE_TTL_SECONDS;
+  return Math.floor(n);
+}
+
+function inspectCache(
+  enabled: boolean,
+  path: string,
+  ttlSeconds: number
+): ConnectionStatus["cache"] {
+  if (!enabled) {
+    const disabled = disabledCacheStatus(path, ttlSeconds);
+    return {
+      enabled: false,
+      path: disabled.cache_path,
+      entries_count: disabled.entries_count,
+      default_ttl_seconds: disabled.default_ttl_seconds
+    };
+  }
+  // Read-only inspection — open the cache and immediately close it. Cheap and
+  // avoids leaking handles into the connection-status flow.
+  let cache: GoogleAdsCache | undefined;
+  try {
+    cache = new GoogleAdsCache(path, ttlSeconds);
+    const status = cache.status();
+    return {
+      enabled: true,
+      path: status.cache_path,
+      entries_count: status.entries_count,
+      oldest_age_ms: status.oldest_age_ms,
+      newest_age_ms: status.newest_age_ms,
+      default_ttl_seconds: status.default_ttl_seconds
+    };
+  } catch {
+    return { enabled: true, path, entries_count: 0, default_ttl_seconds: ttlSeconds };
+  } finally {
+    cache?.close();
+  }
 }
 
 function isLocalHttpRedirect(value: string): boolean {

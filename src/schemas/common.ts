@@ -120,6 +120,22 @@ export const FindWasteInputSchema = z.object({
   response_format: ResponseFormatSchema
 }).strict();
 
+export const QuickWinsInputSchema = z.object({
+  customer_id: CustomerIdSchema,
+  lookback_days: z.number().int().min(1).max(90).default(30)
+    .describe("Look-back window in days (1-90). Converted into the GAQL DATE_RANGE/BETWEEN clause."),
+  min_ctr: z.number().min(0).max(100).default(5)
+    .describe("Minimum CTR in percent (e.g., 5 = 5%). Default 5%."),
+  max_avg_cpc_micros: z.number().int().min(0).default(100_000)
+    .describe("Maximum average CPC in micros. Default 100_000 ($0.10)."),
+  min_conversions: z.number().min(0).default(0.5)
+    .describe("Minimum conversions in the window. Default 0.5 (at least half a conversion)."),
+  limit: z.number().int().min(1).max(200).default(50)
+    .describe("Maximum candidates to return."),
+  privacy_mode: PrivacyModeSchema,
+  response_format: ResponseFormatSchema
+}).strict();
+
 // Mutation input schemas
 export const MutationGateSchema = z.object({
   explicit_user_intent: z.boolean().describe("Must be true. Set this AFTER the user has explicitly confirmed they want to apply this mutation.")
@@ -191,10 +207,18 @@ export const MutationOutputSchema = z.looseObject({
 });
 
 export const CacheStatusOutputSchema = z.looseObject({
-  enabled: z.boolean(),
-  path: z.string(),
-  entries: z.number().int().nonnegative(),
-  newest_cached_at: z.string().optional()
+  cache_enabled: z.boolean(),
+  cache_path: z.string(),
+  entries_count: z.number().int().nonnegative(),
+  oldest_age_ms: z.number().nonnegative().optional(),
+  newest_age_ms: z.number().nonnegative().optional(),
+  default_ttl_seconds: z.number().int().nonnegative().optional()
+});
+
+export const CacheClearOutputSchema = z.looseObject({
+  cache_enabled: z.boolean(),
+  cache_path: z.string(),
+  cleared_entries: z.number().int().nonnegative()
 });
 
 export const AuthUrlOutputSchema = z.object({
@@ -262,3 +286,4 @@ export type CampaignPerformanceInput = z.infer<typeof CampaignPerformanceInputSc
 export type KeywordPerformanceInput = z.infer<typeof KeywordPerformanceInputSchema>;
 export type DailyReportInput = z.infer<typeof DailyReportInputSchema>;
 export type FindWasteInput = z.infer<typeof FindWasteInputSchema>;
+export type QuickWinsInput = z.infer<typeof QuickWinsInputSchema>;

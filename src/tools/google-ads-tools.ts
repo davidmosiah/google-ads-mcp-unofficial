@@ -5,6 +5,8 @@ import {
   AgentManifestOutputSchema,
   AuthUrlInputSchema,
   AuthUrlOutputSchema,
+  CacheClearOutputSchema,
+  CacheStatusOutputSchema,
   CampaignPerformanceInputSchema,
   CampaignStatusToggleInputSchema,
   CapabilitiesOutputSchema,
@@ -29,6 +31,7 @@ import {
   PrivacyAuditOutputSchema,
   PrivacyModeSchema,
   PrivacyModeValueSchema,
+  QuickWinsInputSchema,
   ResponseFormatSchema,
   ResponseOnlyInputSchema,
   ResumeKeywordInputSchema,
@@ -37,9 +40,12 @@ import {
   SetKeywordBidInputSchema,
   StandardOutputSchema
 } from "../schemas/common.js";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import { GOOGLE_ADS_API_BASE_URL } from "../constants.js";
 import { buildAgentManifest, formatAgentManifestMarkdown } from "../services/agent-manifest.js";
 import { buildPrivacyAudit } from "../services/audit.js";
+import { DEFAULT_CACHE_TTL_SECONDS, disabledCacheStatus, GoogleAdsCache, type CacheClearResult, type CacheStatus } from "../services/cache.js";
 import { buildCapabilities } from "../services/capabilities.js";
 import { buildConnectionStatus } from "../services/connection-status.js";
 import { buildDataInventory, formatInventoryMarkdown } from "../services/inventory.js";
@@ -182,6 +188,44 @@ export function registerGoogleAdsTools(server: McpServer): void {
     async ({ response_format }) => {
       const audit = buildPrivacyAudit();
       return makeResponse(audit, response_format, bulletList("Google Ads Privacy Audit", audit));
+    }
+  );
+
+  server.registerTool(
+    "google_ads_cache_status",
+    {
+      title: "Google Ads Cache Status",
+      description: "Return the SQLite GAQL-response cache status: enabled flag, on-disk path, entry count, oldest entry age, and default TTL. Read-only — never calls Google Ads and does not require credentials.",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      outputSchema: CacheStatusOutputSchema,
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+    },
+    async ({ response_format }) => {
+      try {
+        const status = readCacheStatusFromEnv();
+        return makeResponse(status, response_format, bulletList("Google Ads Cache Status", status));
+      } catch (error) {
+        return makeError((error as Error).message);
+      }
+    }
+  );
+
+  server.registerTool(
+    "google_ads_clear_cache",
+    {
+      title: "Google Ads Clear Cache",
+      description: "Delete all entries from the local SQLite GAQL-response cache. Does NOT touch Google Ads — only affects local memoization. Not gated by GOOGLE_ADS_ALLOW_MUTATIONS because nothing in your ad account changes. Does not require credentials.",
+      inputSchema: ResponseOnlyInputSchema.shape,
+      outputSchema: CacheClearOutputSchema,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+    },
+    async ({ response_format }) => {
+      try {
+        const result = clearCacheFromEnv();
+        return makeResponse(result, response_format, bulletList("Google Ads Cache Cleared", result));
+      } catch (error) {
+        return makeError((error as Error).message);
+      }
     }
   );
 
@@ -726,6 +770,65 @@ export function registerGoogleAdsTools(server: McpServer): void {
     }
   );
 
+  server.registerTool(
+    "google_ads_quick_wins",
+    {
+      title: "Find Quick-Win Keywords (read-only)",
+      description: "Identify keywords with LOW CPC + HIGH CTR + at-least-some conversions — candidates to RAISE the bid on. Inverse of google_ads_find_waste. Returns a ranked list with a recommended_bid_micros (current + 25%, capped at 2x). NEVER changes bids; pair with google_ads_set_keyword_bid_micros (gated) after user confirmation.",
+      inputSchema: QuickWinsInputSchema.shape,
+      outputSchema: StandardOutputSchema,
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+    },
+    async (params) => {
+      try {
+        const config = getConfig();
+        const privacyMode = resolvePrivacyMode(config, params.privacy_mode);
+        const cid = sanitizeCustomerId(params.customer_id);
+        if (!cid) throw new Error("Invalid customer_id");
+        const dateClause = buildDateRangeClause(params.lookback_days);
+        // GAQL CTR is a 0..1 ratio (not 0..100), so divide the percent threshold by 100.
+        const minCtrRatio = params.min_ctr / 100;
+        const query = `SELECT ad_group_criterion.criterion_id, ad_group_criterion.keyword.text, ad_group_criterion.keyword.match_type, ad_group.id, campaign.id, metrics.average_cpc, metrics.ctr, metrics.conversions, ad_group_criterion.effective_cpc_bid_micros FROM keyword_view WHERE ${dateClause} AND metrics.ctr > ${minCtrRatio} AND metrics.average_cpc < ${params.max_avg_cpc_micros} AND metrics.conversions >= ${params.min_conversions} ORDER BY metrics.conversions DESC LIMIT ${params.limit}`;
+        const res = await new GoogleAdsClient(config).search({ customerId: cid, query }, privacyMode);
+        const candidates = (res.results ?? []).map((row) => buildQuickWinCandidate(row));
+        const output = {
+          ok: true,
+          privacy_mode: privacyMode,
+          customer_id: privacyMode === "raw" ? cid : redactCustomerId(cid),
+          criteria_applied: {
+            lookback_days: params.lookback_days,
+            min_ctr_pct: params.min_ctr,
+            max_avg_cpc_micros: params.max_avg_cpc_micros,
+            min_conversions: params.min_conversions,
+            limit: params.limit
+          },
+          total_found: candidates.length,
+          candidates,
+          next_steps: candidates.length > 0
+            ? [
+                "Review the recommended_bid_micros for each candidate (current_bid + 25%, capped at 2x current).",
+                "To raise bids, ask the user to enable GOOGLE_ADS_ALLOW_MUTATIONS, then call google_ads_set_keyword_bid_micros per criterion_id with the recommended value (or a more conservative one).",
+                "Re-run google_ads_quick_wins after 7+ days to confirm the new bid improved conversions before raising again."
+              ]
+            : [
+                "No quick-win candidates at current thresholds. Try lowering min_ctr or min_conversions, or widening lookback_days."
+              ]
+        };
+        return makeResponse(output, params.response_format, bulletList("Quick-Win Keywords", {
+          customer_id: redactCustomerId(cid),
+          lookback_days: params.lookback_days,
+          min_ctr_pct: params.min_ctr,
+          max_avg_cpc_micros: params.max_avg_cpc_micros,
+          min_conversions: params.min_conversions,
+          candidates: candidates.length,
+          next: candidates.length > 0 ? "Review candidates, then raise bids with mutations enabled" : "No candidates at current thresholds"
+        }));
+      } catch (error) {
+        return makeError((error as Error).message);
+      }
+    }
+  );
+
   // ── MUTATION tools (gated) ─────────────────────────────────────────────────
   server.registerTool(
     "google_ads_pause_keyword",
@@ -1030,6 +1133,117 @@ function renderDailyReport(input: {
     lines.push("> Consider lowering bids on costly keywords or running google_ads_find_waste to identify cleanup candidates.");
   }
   return lines.join("\n");
+}
+
+/**
+ * Build a GAQL DATE_RANGE clause covering the last `days` days.
+ *
+ * Google Ads accepts a handful of pre-baked ranges (LAST_7_DAYS, LAST_30_DAYS,
+ * LAST_90_DAYS, YESTERDAY, etc.) — use those when they match exactly. Otherwise
+ * fall back to a `BETWEEN '<start>' AND '<end>'` form where both bounds are
+ * UTC dates (YYYY-MM-DD). End date = yesterday (Google Ads typically lags
+ * "today" by hours; yesterday gives finalized numbers).
+ */
+export function buildDateRangeClause(days: number, todayMs: number = Date.now()): string {
+  if (days === 7) return "segments.date DURING LAST_7_DAYS";
+  if (days === 30) return "segments.date DURING LAST_30_DAYS";
+  if (days === 90) return "segments.date DURING LAST_90_DAYS";
+  if (days === 14) return "segments.date DURING LAST_14_DAYS";
+  if (days === 1) return "segments.date DURING YESTERDAY";
+  const today = new Date(todayMs);
+  const end = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() - 1));
+  const start = new Date(end.getTime());
+  start.setUTCDate(start.getUTCDate() - (days - 1));
+  return `segments.date BETWEEN '${toIsoDate(start)}' AND '${toIsoDate(end)}'`;
+}
+
+function toIsoDate(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/**
+ * Map a raw GAQL row from keyword_view into a quick-win candidate. The recommended
+ * bid is current + 25%, but never more than 2x the current bid (rough guard
+ * against runaway recommendations on outlier under-bid keywords).
+ */
+export function buildQuickWinCandidate(row: Record<string, unknown>): Record<string, unknown> {
+  const criterion = (row.ad_group_criterion ?? {}) as Record<string, unknown>;
+  const keyword = (criterion.keyword ?? {}) as Record<string, unknown>;
+  const adGroup = (row.ad_group ?? {}) as Record<string, unknown>;
+  const campaign = (row.campaign ?? {}) as Record<string, unknown>;
+  const metrics = (row.metrics ?? {}) as Record<string, unknown>;
+  const currentAvgCpcMicros = toNumber(metrics.average_cpc);
+  const currentCpcBidMicros = toNumber(criterion.effective_cpc_bid_micros);
+  const ctrRatio = toNumber(metrics.ctr) ?? 0;
+  const conversions = toNumber(metrics.conversions) ?? 0;
+  const baseBid = currentCpcBidMicros ?? currentAvgCpcMicros ?? 0;
+  const proposed = Math.round(baseBid * 1.25);
+  const cap = Math.round(baseBid * 2);
+  const recommended = baseBid > 0 ? Math.min(proposed, cap) : null;
+  return {
+    criterion_id: criterion.criterion_id ?? null,
+    ad_group_id: adGroup.id ?? null,
+    campaign_id: campaign.id ?? null,
+    keyword_text: keyword.text ?? null,
+    match_type: keyword.match_type ?? null,
+    current_avg_cpc_micros: currentAvgCpcMicros ?? null,
+    current_cpc_bid_micros: currentCpcBidMicros ?? null,
+    ctr_pct: Number((ctrRatio * 100).toFixed(2)),
+    conversions,
+    recommended_bid_micros: recommended,
+    reason: `CTR ${(ctrRatio * 100).toFixed(2)}% with avg CPC ${currentAvgCpcMicros ?? 0} micros and ${conversions} conversions — likely under-bid.`
+  };
+}
+
+function toNumber(value: unknown): number | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === "number") return Number.isFinite(value) ? value : undefined;
+  if (typeof value === "string") {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : undefined;
+  }
+  return undefined;
+}
+
+function resolveCacheSettings(): { enabled: boolean; path: string; ttlSeconds: number } {
+  const sources = loadConfigSources();
+  const v = (k: keyof typeof sources.values) => sources.values[k];
+  const rawEnabled = v("GOOGLE_ADS_CACHE");
+  const enabled = Boolean(rawEnabled && ["1", "true", "yes", "on", "sqlite"].includes(rawEnabled.toLowerCase()));
+  const path = v("GOOGLE_ADS_CACHE_PATH") ?? join(homedir(), ".google-ads-mcp", "cache.sqlite");
+  const ttlRaw = v("GOOGLE_ADS_CACHE_TTL_SECONDS");
+  const ttl = ttlRaw && Number.isFinite(Number(ttlRaw)) && Number(ttlRaw) >= 0 ? Math.floor(Number(ttlRaw)) : DEFAULT_CACHE_TTL_SECONDS;
+  return { enabled, path, ttlSeconds: ttl };
+}
+
+function readCacheStatusFromEnv(): CacheStatus {
+  const { enabled, path, ttlSeconds } = resolveCacheSettings();
+  if (!enabled) return disabledCacheStatus(path, ttlSeconds);
+  let cache: GoogleAdsCache | undefined;
+  try {
+    cache = new GoogleAdsCache(path, ttlSeconds);
+    return cache.status();
+  } finally {
+    cache?.close();
+  }
+}
+
+function clearCacheFromEnv(): CacheClearResult & { cache_enabled: boolean; cache_path: string } {
+  const { enabled, path, ttlSeconds } = resolveCacheSettings();
+  if (!enabled) {
+    return { cleared_entries: 0, cache_enabled: false, cache_path: path };
+  }
+  let cache: GoogleAdsCache | undefined;
+  try {
+    cache = new GoogleAdsCache(path, ttlSeconds);
+    const cleared = cache.clear();
+    return { ...cleared, cache_enabled: true, cache_path: path };
+  } finally {
+    cache?.close();
+  }
 }
 
 // Silence unused-import warnings for schema-only imports.

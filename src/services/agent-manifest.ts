@@ -17,7 +17,9 @@ export const HERMES_DIRECT_TOOLS = [
 
 export const STANDARD_TOOLS = [
   "google_ads_agent_manifest",
+  "google_ads_cache_status",
   "google_ads_capabilities",
+  "google_ads_clear_cache",
   "google_ads_connection_status",
   "google_ads_daily_report",
   "google_ads_data_inventory",
@@ -36,6 +38,7 @@ export const STANDARD_TOOLS = [
   "google_ads_privacy_audit",
   "google_ads_profile_get",
   "google_ads_profile_update",
+  "google_ads_quick_wins",
   "google_ads_revoke_access"
 ];
 

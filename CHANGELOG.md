@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.1.3 - 2026-05-22
+
+### Added
+
+- **SQLite GAQL response cache (parity with whoop/oura/garmin MCPs)**. Disabled by default. Enable with `GOOGLE_ADS_CACHE=sqlite` (or `=true`); override path with `GOOGLE_ADS_CACHE_PATH` (default `~/.google-ads-mcp/cache.sqlite`); override TTL with `GOOGLE_ADS_CACHE_TTL_SECONDS` (default 60s — Google Ads metrics update roughly hourly, so a 60s read-through cache eliminates duplicate hits during agent loops without returning stale data). Key is a SHA-256 of `(customer_id + GAQL query + privacy_mode)`; mutations bypass the cache entirely. On a fresh API failure the client falls back to the most recent cache entry regardless of age (better stale data than no data when upstream is down). Cache size, oldest entry age, default TTL, and path are surfaced in `google_ads_connection_status` and `google_ads_privacy_audit`.
+- **`google_ads_cache_status`** (new tool, read-only) — returns `{cache_enabled, cache_path, entries_count, oldest_age_ms, newest_age_ms, default_ttl_seconds}` without touching Google Ads.
+- **`google_ads_clear_cache`** (new tool) — wipes local cache rows. Not gated by `GOOGLE_ADS_ALLOW_MUTATIONS` because nothing in the ad account changes — only local memoization is affected.
+- **`google_ads_quick_wins`** (new workflow tool, read-only) — inverse of `google_ads_find_waste`. Finds keywords with **LOW CPC + HIGH CTR + at-least-some conversions** = candidates to RAISE the bid on (likely under-bidding profitable keywords). Inspired by the RobloxDrop "aumenta bid de keywords com CPC < R$0.10 e CTR > 10%" optimizer pattern. Input: `customer_id`, `lookback_days` (1-90, default 30), `min_ctr` (default 5%), `max_avg_cpc_micros` (default 100_000 = $0.10), `min_conversions` (default 0.5), `limit` (default 50). Output: ranked candidates with `recommended_bid_micros` (current bid + 25%, capped at 2x current) plus actionable `next_steps`. Pair with `google_ads_set_keyword_bid_micros` (gated) per criterion_id after user confirmation.
+- **`scripts/cache-test.mjs`** — round-trip cache lifecycle test: set → get hit → privacy-mode separation → TTL expiry → clear. No live API.
+- **`scripts/quick-wins-test.mjs`** — schema + candidate-builder + date-range-clause coverage. No live API. Verifies `recommended_bid_micros` math (current + 25% capped at 2x), `ctr_pct` conversion (0..1 ratio → 0..100 percent), `lookback_days` mapping to `LAST_N_DAYS`/`BETWEEN`.
+
+### Changed
+
+- `GoogleAdsClient.search()` now accepts an optional `privacyMode` argument so cache rows for the same query under different privacy modes don't collide. Paginated continuations (`pageToken`) are never cached — the token already implies state.
+- `scripts/smoke-tools.mjs` expected-tool count: 27 → 30. Adds assertions for the new cache/quick-wins tools' default-state shapes (`cache_enabled=false`, `entries_count=0`, validation rejects missing `customer_id`).
+- `package.json` test script chain now: `typecheck → build → test:metadata → smoke → smoke:http → test:http-retry → test:cache → test:quick-wins`.
+
 ## 0.1.2 - 2026-05-22
 
 ### Added
