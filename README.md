@@ -12,6 +12,19 @@
 
 ---
 
+## HTTP (v2 stateless)
+
+Default is **stdio**. Optional Streamable HTTP — no session id, JSON responses, loopback only:
+
+```bash
+npx -y google-ads-mcp-unofficial --http
+# GET  http://127.0.0.1:3000/health
+# POST http://127.0.0.1:3000/mcp   (sessionless)
+```
+
+Env: `GOOGLE_ADS_MCP_HOST`, `GOOGLE_ADS_MCP_PORT`, `GOOGLE_ADS_MCP_TRANSPORT=http`.
+
+
 ## Quick start (30 seconds)
 
 ```bash
