@@ -27,10 +27,11 @@
     "smoke": "node scripts/smoke-tools.mjs",
     "smoke:http": "node scripts/smoke-http.mjs",
     "test:metadata": "node scripts/metadata-check.mjs",
+    "test:api-version": "node scripts/api-version-test.mjs",
     "test:http-retry": "node scripts/http-retry-test.mjs",
     "test:cache": "node scripts/cache-test.mjs",
     "test:quick-wins": "node scripts/quick-wins-test.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run smoke && npm run smoke:http && npm run test:http-retry && npm run test:cache && npm run test:quick-wins",
+    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run test:api-version && npm run smoke && npm run smoke:http && npm run test:http-retry && npm run test:cache && npm run test:quick-wins",
     "prepublishOnly": "npm test"
   },
   "keywords": [

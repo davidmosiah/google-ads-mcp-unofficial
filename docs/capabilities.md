@@ -4,7 +4,7 @@ The full machine-readable capability matrix is returned by `google_ads_capabilit
 
 ## API boundary
 
-- **Source:** Official Google Ads REST API v17
+- **Source:** Official Google Ads REST API v25
 - **Raw means:** the full JSON response returned by supported endpoints
 - **Does NOT include:**
   - Google Ads Scripts (`AdsApp`) — run only inside the Google Ads dashboard

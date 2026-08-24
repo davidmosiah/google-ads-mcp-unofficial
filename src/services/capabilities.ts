@@ -10,7 +10,7 @@ export function buildCapabilities() {
     },
     unofficial: true,
     api_boundary: {
-      source: "Official Google Ads REST API v17",
+      source: "Official Google Ads REST API v25",
       raw_definition: "Raw means the full JSON response returned by supported Google Ads REST API endpoints.",
       does_not_include: [
         "Google Ads Scripts (run only inside the Google Ads dashboard, not via API)",

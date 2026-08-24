@@ -4,9 +4,9 @@ export const NPM_PACKAGE_NAME = "google-ads-mcp-unofficial";
 export const PINNED_NPM_PACKAGE = `${NPM_PACKAGE_NAME}@${SERVER_VERSION}`;
 export const MCP_NAME = "io.github.davidmosiah/google-ads-mcp";
 
-// Google Ads REST API v17 (latest stable as of 2026). The base URL is paired
-// with a customer id in the path: /v17/customers/{customer_id}/googleAds:search
-export const GOOGLE_ADS_API_VERSION = "v17";
+// Google Ads REST API v25. The base URL is paired with a customer id in the
+// path: /v25/customers/{customer_id}/googleAds:search
+export const GOOGLE_ADS_API_VERSION = "v25";
 export const GOOGLE_ADS_API_BASE_URL = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}`;
 
 // OAuth2 endpoints (shared with all Google APIs)
