@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5 - 2026-08-26
+
+### Changed
+
+- Target official Google Ads REST API **v25** (`/v25/customers/{id}/googleAds:search`). npm `0.1.4` still advertised an older major.
+
 ## 0.1.4
 
 - Security: fleet pin hygiene — `hono@4.13.1`, `@hono/node-server@2.1.0`, `fast-uri@3.1.5`, `ip-address@10.4.0` (stale security overrides were still vulnerable).
