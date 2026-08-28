@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6 - 2026-08-28
+
+Default docs and examples no longer contain a copyable `GOOGLE_ADS_ALLOW_MUTATIONS=true` assignment. Mutations stay off until the env is enabled and `explicit_user_intent` is set. `secret-scan` covers README/examples/llms.
+
 ## 0.1.5 - 2026-08-26
 
 ### Changed

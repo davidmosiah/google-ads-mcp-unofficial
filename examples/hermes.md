@@ -39,7 +39,7 @@ After config changes, use `/reload-mcp` or `hermes mcp test google-ads`. **Do NO
 If the user wants Hermes to actually change campaigns:
 
 ```bash
-GOOGLE_ADS_ALLOW_MUTATIONS=true npx -y google-ads-mcp-unofficial setup --client hermes --allow-mutations --no-auth
+npx -y google-ads-mcp-unofficial setup --client hermes --allow-mutations --no-auth
 ```
 
 Mutations remain double-gated: env flag + `explicit_user_intent: true` per call.

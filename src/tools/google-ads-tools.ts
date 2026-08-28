@@ -78,7 +78,7 @@ function requireMutationsEnabled(): void {
   const enabled = flag ? ["1", "true", "yes", "on"].includes(flag.toLowerCase()) : false;
   if (!enabled) {
     throw new Error(
-      "Write tools are disabled. To enable: re-run `google-ads-mcp-server setup --allow-mutations` or set GOOGLE_ADS_ALLOW_MUTATIONS=true. ASK THE USER BEFORE TURNING THIS ON — it lets agents change campaigns, bids, budgets, and pause/resume keywords."
+      "Write tools are disabled. To enable: re-run `google-ads-mcp-server setup --allow-mutations` or enable GOOGLE_ADS_ALLOW_MUTATIONS. ASK THE USER BEFORE TURNING THIS ON — it lets agents change campaigns, bids, budgets, and pause/resume keywords."
     );
   }
 }
@@ -834,7 +834,7 @@ export function registerGoogleAdsTools(server: McpServer): void {
     "google_ads_pause_keyword",
     {
       title: "Pause Keyword (gated mutation)",
-      description: "Pause a single keyword by criterion_id. GATED: requires GOOGLE_ADS_ALLOW_MUTATIONS=true AND explicit_user_intent=true. Ask the user first.",
+      description: "Pause a single keyword by criterion_id. GATED: requires GOOGLE_ADS_ALLOW_MUTATIONS enabled AND explicit_user_intent. Ask the user first.",
       inputSchema: PauseKeywordInputSchema.shape,
       outputSchema: MutationOutputSchema,
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: true }

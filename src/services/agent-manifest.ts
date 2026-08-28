@@ -79,7 +79,7 @@ export function buildAgentManifest(client: AgentClientName = "generic") {
       env_flag: "GOOGLE_ADS_ALLOW_MUTATIONS",
       default: false,
       tools: MUTATION_TOOLS,
-      enable_hint: "Re-run `google-ads-mcp-server setup --allow-mutations` or set GOOGLE_ADS_ALLOW_MUTATIONS=true. ASK THE USER FIRST."
+      enable_hint: "Re-run `google-ads-mcp-server setup --allow-mutations` or enable GOOGLE_ADS_ALLOW_MUTATIONS. ASK THE USER FIRST."
     },
     recommended_first_calls: [
       "google_ads_profile_get",
@@ -117,7 +117,7 @@ export function buildAgentManifest(client: AgentClientName = "generic") {
       { symptom: "Google did not return refresh_token on auth", action: "Revoke at https://myaccount.google.com/permissions then re-run `google-ads-mcp-server auth` (uses prompt=consent)." },
       { symptom: "401 or expired token", action: "Re-run auth or wait — refresh_token-backed access tokens are refreshed automatically." },
       { symptom: "PERMISSION_DENIED on account read", action: "Confirm login_customer_id is the manager (MCC) that owns the target customer, no dashes." },
-      { symptom: "write tool returns 'mutations disabled'", action: "Ask the user, then set GOOGLE_ADS_ALLOW_MUTATIONS=true or rerun setup with --allow-mutations." },
+      { symptom: "write tool returns 'mutations disabled'", action: "Ask the user, then enable GOOGLE_ADS_ALLOW_MUTATIONS or rerun setup with --allow-mutations." },
       { symptom: "Hermes configured but tools unavailable", action: "Run `/reload-mcp` or `hermes mcp test google-ads`; do not restart gateway for normal reload." }
     ],
     links: {

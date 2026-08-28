@@ -62,7 +62,7 @@ export function buildDataInventory() {
     notes: [
       "This inventory is static MCP metadata and does not call Google Ads APIs.",
       "Call google_ads_connection_status before any data tool to verify credentials and local token readiness.",
-      "Mutations are disabled by default. Enable with GOOGLE_ADS_ALLOW_MUTATIONS=true only after explicit user approval.",
+      "Mutations are disabled by default. Enable GOOGLE_ADS_ALLOW_MUTATIONS only after explicit user approval.",
       "Customer ids are partial-redacted in structured mode (default). Use raw mode for full ids."
     ]
   };

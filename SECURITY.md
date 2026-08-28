@@ -24,7 +24,7 @@ Out of scope:
 - **Developer token + client secret** live in `~/.google-ads-mcp/config.json` (`0600`) when written via setup; you may also pass them via env vars.
 - **Error messages** are scrubbed by `redactErrorMessage` to remove `Bearer ...`, `access_token=...`, `refresh_token=...`, `client_secret=...`, `developer-token=...`, and email addresses before they leave the process.
 - **Customer ids** are partial-redacted (`123-***-7890`) in default `structured` privacy mode. `raw` mode returns full ids — opt-in only.
-- **Mutations are disabled by default** behind `GOOGLE_ADS_ALLOW_MUTATIONS=true`. Every mutation is logged to stderr with the resource name. Enable only after explicit user approval.
+- **Mutations are disabled by default** behind `GOOGLE_ADS_ALLOW_MUTATIONS`. Every mutation is logged to stderr with the resource name. Enable only after explicit user approval.
 - **Stdio transport** logs to stderr exclusively to avoid corrupting JSON-RPC on stdout.
 
 ## Recommended user posture

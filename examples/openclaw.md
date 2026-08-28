@@ -27,7 +27,7 @@ npx -y google-ads-mcp-unofficial doctor
 
 Mutations are off by default and require:
 
-1. `GOOGLE_ADS_ALLOW_MUTATIONS=true` (env or config)
+1. `GOOGLE_ADS_ALLOW_MUTATIONS` enabled (env or config)
 2. `explicit_user_intent: true` in every mutation call
 
 OpenClaw operators should ask the user explicitly before enabling either gate.

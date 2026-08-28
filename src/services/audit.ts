@@ -55,7 +55,7 @@ export function buildPrivacyAudit(): Record<string, unknown> {
       "This is an unofficial Google Ads integration.",
       "OAuth tokens and developer token are stored locally and are not returned by tools.",
       "Raw Google Ads payloads require GOOGLE_ADS_PRIVACY_MODE=raw or privacy_mode=raw.",
-      "Mutations (bid/budget/pause changes) are disabled by default and gated behind GOOGLE_ADS_ALLOW_MUTATIONS=true.",
+      "Mutations (bid/budget/pause changes) are disabled by default and gated behind GOOGLE_ADS_ALLOW_MUTATIONS.",
       "Errors are redacted before returning to MCP clients.",
       "stdio transport logs to stderr to avoid corrupting JSON-RPC.",
       "Customer ids are partial-redacted in structured mode (default) — opt into raw to see full ids."

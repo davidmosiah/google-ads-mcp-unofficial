@@ -133,11 +133,11 @@ Pass `privacy_mode` per call to override the default per response.
 - `google_ads_set_campaign_budget_micros`
 - `google_ads_pause_campaign` / `google_ads_resume_campaign`
 
-If an agent calls any of them without `GOOGLE_ADS_ALLOW_MUTATIONS=true`, it gets:
+If an agent calls any of them without `GOOGLE_ADS_ALLOW_MUTATIONS` enabled, it gets:
 
 ```
 Error: Write tools are disabled. To enable: re-run `google-ads-mcp-server setup --allow-mutations`
-or set GOOGLE_ADS_ALLOW_MUTATIONS=true. ASK THE USER BEFORE TURNING THIS ON — it lets agents
+or enable GOOGLE_ADS_ALLOW_MUTATIONS. ASK THE USER BEFORE TURNING THIS ON — it lets agents
 change campaigns, bids, budgets, and pause/resume keywords.
 ```
 
@@ -281,7 +281,7 @@ After the user confirms:
 | `Missing required Google Ads environment variables` | Run `setup` or set the env vars listed in the error. |
 | `Google did not return a refresh_token` | Revoke at https://myaccount.google.com/permissions then re-run `auth`. |
 | `PERMISSION_DENIED` on a read | Confirm `GOOGLE_ADS_LOGIN_CUSTOMER_ID` matches the MCC that owns the target customer (no dashes). |
-| `Write tools are disabled` | Expected. Ask the user before enabling `GOOGLE_ADS_ALLOW_MUTATIONS=true`. |
+| `Write tools are disabled` | Expected. Ask the user before enabling `GOOGLE_ADS_ALLOW_MUTATIONS`. |
 | Hermes tools missing after config edit | `/reload-mcp` or `hermes mcp test google-ads`. Do NOT restart the gateway. |
 | Token file insecure perms warning | `chmod 600 ~/.google-ads-mcp/tokens.json` |
 

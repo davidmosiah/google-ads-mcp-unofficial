@@ -6,12 +6,12 @@
     "url": "https://github.com/davidmosiah/google-ads-mcp-unofficial",
     "source": "github"
   },
-  "version": "0.1.5",
+  "version": "0.1.6",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "google-ads-mcp-unofficial",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "transport": {
         "type": "stdio"
       },

@@ -9,7 +9,7 @@ This document tells AI agents how to operate the Google Ads MCP safely.
 - 3 auth — OAuth lifecycle
 - 8 reads — GAQL queries against Google Ads REST
 - 2 workflow — synthesized reports/audits, always read-only
-- 6 mutations — GATED by `GOOGLE_ADS_ALLOW_MUTATIONS=true`
+- 6 mutations — GATED by `GOOGLE_ADS_ALLOW_MUTATIONS`
 
 ## Agent first-call ladder
 
@@ -21,7 +21,7 @@ This document tells AI agents how to operate the Google Ads MCP safely.
 
 ## Hard rules (do not violate)
 
-1. **Mutations are off by default.** Before suggesting the user enable `GOOGLE_ADS_ALLOW_MUTATIONS=true`, explicitly ask. Do not silently set it.
+1. **Mutations are off by default.** Before suggesting the user enable `GOOGLE_ADS_ALLOW_MUTATIONS`, explicitly ask. Do not silently set it.
 2. **One change at a time.** When mutations are enabled, do not batch pauses or bid changes across many keywords without explicit confirmation per change.
 3. **`explicit_user_intent: true` is required on every mutation call.** Even after env-level enable.
 4. **Frame outputs as marketing operations, not financial advice.**

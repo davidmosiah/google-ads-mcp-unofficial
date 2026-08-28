@@ -66,7 +66,7 @@ export async function runSetupCommand(args: string[]): Promise<number> {
     console.log(`  v  Local config       ${configPath}`);
     console.log(`  v  MCP client config  ${clientConfig.path}`);
     if (clientConfig.hermes_skill_path) console.log(`  v  Hermes skill       ${clientConfig.hermes_skill_path}`);
-    if (options.allowMutations) console.log(`  !  Mutations enabled  GOOGLE_ADS_ALLOW_MUTATIONS=true — review every change`);
+    if (options.allowMutations) console.log(`  !  Mutations enabled  (GOOGLE_ADS_ALLOW_MUTATIONS) — review every change`);
     console.log("");
     console.log("Secrets were saved only in the local config file (chmod 600).");
     console.log(`-> Next: ${setupOutput.next_step}`);
