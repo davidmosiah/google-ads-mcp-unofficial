@@ -1,6 +1,6 @@
 {
   "name": "google-ads-mcp-unofficial",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "Unofficial MCP server for connecting AI agents to the Google Ads API. Read campaigns, keywords, performance. Optional gated mutations for bids, budgets, and pause/resume.",
   "type": "module",
   "bin": {
@@ -17,7 +17,8 @@
     "CONTRIBUTING.md",
     "server.json",
     "examples",
-    "llms.txt"
+    "llms.txt",
+    "skill"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -32,8 +33,9 @@
     "test:cache": "node scripts/cache-test.mjs",
     "test:quick-wins": "node scripts/quick-wins-test.mjs",
     "test:secret-scan": "node scripts/secret-scan.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run test:api-version && npm run smoke && npm run smoke:http && npm run test:http-retry && npm run test:cache && npm run test:quick-wins && npm run test:secret-scan",
-    "prepublishOnly": "npm test"
+    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run test:api-version && npm run smoke && npm run smoke:http && npm run test:http-retry && npm run test:cache && npm run test:quick-wins && npm run test:secret-scan && npm run test:skill-surface",
+    "prepublishOnly": "npm test",
+    "test:skill-surface": "node scripts/test-skill-surface.mjs"
   },
   "keywords": [
     "mcp",

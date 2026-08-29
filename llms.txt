@@ -15,3 +15,6 @@ MCP command: google-ads-mcp-server
 - Tokens stay local under ~/.google-ads-mcp/tokens.json (0600 perms) and are never returned by tools.
 - Mutations are logged to stderr for audit. Always review proposed changes before enabling write tools.
 - Not affiliated with Google. Use at your own risk — agents changing real ad spend is high-stakes.
+
+Skill (same gates, no MCP client required): skill/SKILL.md
+npx -y google-ads-mcp-unofficial call <tool> --json '{...}'

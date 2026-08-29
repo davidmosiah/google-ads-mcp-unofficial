@@ -300,3 +300,13 @@ After the user confirms:
 Unofficial integration. **Not affiliated with Google.** This MCP does not include automated financial-account changes beyond what the Google Ads REST API allows. Always review proposed changes before enabling `GOOGLE_ADS_ALLOW_MUTATIONS`. The author is not responsible for budget overruns, paused campaigns, or any other consequences of automated changes to your Google Ads account.
 
 MIT-licensed.
+
+## Skill or MCP
+
+Same package, two doors. MCP registers tools on stdio/HTTP. The [skill](skill/SKILL.md) can drive the **same** tools through the CLI when the client has no MCP:
+
+```bash
+npx -y google-ads-mcp-unofficial call google_ads_connection_status --json '{}'
+```
+
+Copy `skill/SKILL.md` into your agent skills dir.
