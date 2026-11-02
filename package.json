@@ -33,9 +33,11 @@
     "test:cache": "node scripts/cache-test.mjs",
     "test:quick-wins": "node scripts/quick-wins-test.mjs",
     "test:secret-scan": "node scripts/secret-scan.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run test:api-version && npm run smoke && npm run smoke:http && npm run test:http-retry && npm run test:cache && npm run test:quick-wins && npm run test:secret-scan && npm run test:skill-surface",
+    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run test:api-version && npm run smoke && npm run smoke:http && npm run test:http-retry && npm run test:cache && npm run test:quick-wins && npm run test:secret-scan && npm run test:skill-surface && npm run test:input-limits && npm run test:mutation-boundaries",
     "prepublishOnly": "npm test",
-    "test:skill-surface": "node scripts/test-skill-surface.mjs"
+    "test:skill-surface": "node scripts/test-skill-surface.mjs",
+    "test:input-limits": "node scripts/input-boundaries.mjs",
+    "test:mutation-boundaries": "node scripts/mutation-boundaries.mjs"
   },
   "keywords": [
     "mcp",
@@ -50,11 +52,11 @@
   "author": "David Mosiah",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.21.0",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "better-sqlite3": "^12.9.0",
     "cors": "^2.8.6",
     "express": "^5.2.1",
-    "zod": "^4.4.1"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
@@ -82,9 +84,11 @@
   },
   "main": "dist/index.js",
   "overrides": {
-    "@hono/node-server": "2.1.0",
-    "hono": "4.13.1",
-    "fast-uri": "3.1.5",
-    "ip-address": "10.4.0"
+    "@hono/node-server": "2.1.3",
+    "hono": "4.13.11",
+    "fast-uri": "3.1.9",
+    "ip-address": "10.7.4",
+    "qs": "6.16.1",
+    "body-parser": "2.4.0"
   }
 }
