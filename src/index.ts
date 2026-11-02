@@ -9,7 +9,7 @@ import { runCliCommand } from "./cli/commands.js";
 import { registerGoogleAdsTools } from "./tools/google-ads-tools.js";
 
 function createServer(): McpServer {
-  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION });
+  const server = new McpServer({ name: SERVER_NAME, version: SERVER_VERSION }, { maxToolInputElements: 10_000 });
   registerGoogleAdsTools(server);
   return server;
 }
@@ -26,7 +26,7 @@ async function runHttp(): Promise<void> {
   const port = Number(process.env.GOOGLE_ADS_MCP_PORT ?? 3000);
   const allowedOrigin = process.env.GOOGLE_ADS_MCP_ALLOWED_ORIGIN ?? `http://${host}:${port}`;
 
-  app.use(express.json({ limit: "1mb" }));
+  app.use(express.json({ limit: "1mb", inflate: false }));
   app.use(cors({ origin: allowedOrigin }));
 
   app.get("/health", (_req, res) => {
