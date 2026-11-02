@@ -16,3 +16,14 @@ used in these tests. HTTP authentication and provider permissions are unchanged.
 Dependency updates target patched SDK/Zod and affected transitive libraries with
 official npm lock resolution and lifecycle scripts disabled during installation.
 A zero-known-vulnerability audit is a snapshot, not proof of vulnerability absence.
+
+## Deployment boundary
+The standalone HTTP transport has no built-in authentication and defaults to
+127.0.0.1. Do not expose it directly to public or untrusted networks. CORS is not
+authentication; a remote deployment needs independently configured authentication
+and network isolation. Neither the input ceiling nor the mutation intent boolean
+proves human authorization. Existing global mutation opt-in plus per-call intent
+checks are unchanged; tests verify all six mutation handlers fail with the global
+gate disabled, for both intent values, and the independently authorized isolated
+case with the global gate enabled but per-call intent false. Fetch and socket
+operations are blocked in this synthetic harness. Live enabled mutations were not tested and no production account was used.

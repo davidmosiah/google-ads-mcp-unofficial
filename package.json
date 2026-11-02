@@ -33,10 +33,11 @@
     "test:cache": "node scripts/cache-test.mjs",
     "test:quick-wins": "node scripts/quick-wins-test.mjs",
     "test:secret-scan": "node scripts/secret-scan.mjs",
-    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run test:api-version && npm run smoke && npm run smoke:http && npm run test:http-retry && npm run test:cache && npm run test:quick-wins && npm run test:secret-scan && npm run test:skill-surface && npm run test:input-limits",
+    "test": "npm run typecheck && npm run build && npm run test:metadata && npm run test:api-version && npm run smoke && npm run smoke:http && npm run test:http-retry && npm run test:cache && npm run test:quick-wins && npm run test:secret-scan && npm run test:skill-surface && npm run test:input-limits && npm run test:mutation-boundaries",
     "prepublishOnly": "npm test",
     "test:skill-surface": "node scripts/test-skill-surface.mjs",
-    "test:input-limits": "node scripts/input-boundaries.mjs"
+    "test:input-limits": "node scripts/input-boundaries.mjs",
+    "test:mutation-boundaries": "node scripts/mutation-boundaries.mjs"
   },
   "keywords": [
     "mcp",
